@@ -61,6 +61,22 @@ void setup()
   Serial.begin(9600);
 
   FastLED.addLeds<NEOPIXEL, LED_STRIP_PIN>(leds, NUM_LEDS); // Initialize Fast LED
+  for (int i = 0; i < NUM_LEDS; i++) 
+		leds[i] = CRGB(0, 0, 255);
+	FastLED.show(); 
+	delay(1000); 	
+
+	//bootstrap average with some low values
+	for (int i = 0; i < AVGLEN; i++) {	
+		insert(250, avgs, AVGLEN);
+	}
+
+	//Initial values
+	high.times = 0;
+	high.times_start = millis();
+ 	Color.r = 0;	
+	Color.g = 0;
+  Color.b = 1;
 }
 
 void loop()
