@@ -81,7 +81,15 @@ void setup()
 
 void loop()
 {
-  
+  switch(mode) {
+	case 0:
+		visualize_music();
+		break;
+	default:
+		break;
+}
+
+delay(DELAY); // delay in between reads for stability
 }
 
 //----------------------------------------------------------------------------------------------------------------
