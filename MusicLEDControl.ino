@@ -6,7 +6,7 @@
 // Configuration Details
 #define NUM_LEDS        60              // Total amount of LEDs
 #define LED_STRIP_PIN   6               // Pin that controls the LED strip
-#define ANALOG_PIN_     0               // Pin that we read sound sensor values from
+#define ANALOG_PIN      0               // Pin that we read sound sensor values from
 #define MIC_MIN         0.0             // Minimum mic value
 #define MIC_MAX         737.0           // Maximum mic value
 //----------------------------------------------------------------------------------------------------------------
@@ -70,6 +70,7 @@ void loop()
 
 //----------------------------------------------------------------------------------------------------------------
 // Helper Functions
+// Compute the average of an array
 int avg(int* avgs, int len)
 {
   int sum = 0;
@@ -84,6 +85,28 @@ int avg(int* avgs, int len)
      );
 }
 
+// Insert a value into the array, shift it down if the first value of the array is already full
+void insert(int val, int* avgs, int len)
+{
+  
+}
+
+// From Arduino.cc, scaling function with curve
+float scale( float origMin, float origMax, float start, float fin, float val, float curve)
+{ 
+}
+
+// Visualize 
+void visualize()
+{
+  int avg;
+  int longAvg;
+  int mapped;
+  int sensorValue;
+
+  // Read actual sensor value
+  sensorValue = analogRead(ANALOG_PIN);
+}
 
 
 
