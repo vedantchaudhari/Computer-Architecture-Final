@@ -25,14 +25,14 @@ struct Time                             // Keep track how often & how long a spe
 {
   unsigned long timeStart;
   short times;
-}
+};
 
 struct Color                            // How much to increment, decrement a color by each cycle
 {
   int r;
   int g;
   int b;
-}
+};
 //----------------------------------------------------------------------------------------------------------------
 // Global Variables
 int activeLEDS = NUM_LEDS;              // Number of LEDs to display to
@@ -42,70 +42,64 @@ unsigned long songAvg;                  // Average sound measurement for the las
 int iter = 0;                           // Number of iterations since song_avg was reset
 float fadeScale = 1.2;                  // Speed LEDs fade at if not relit
 CRGB leds[NUM_LEDS];                    // LED Strip array
-int avgs[AVERAGE_LENGTH];               // "Normalize" input values instead of using sensor output directly
-int longAvg[LONG_SECTOR];               // Longer sound average ^^
+int avgs[AVERAGE_LENGTH] = {-1};        // "Normalize" input values instead of using sensor output directly
+int longAvg[LONG_SECTOR] = {-1};        // Longer sound average ^^
 struct Time high;                       // Keep track of how long high mode lasts
 struct Color color;                     // Color
 //----------------------------------------------------------------------------------------------------------------
 // Helper Functions
-int     avg(int* avgs, int len);
+int     computeAvg(int* avgs, int len);
 void    insert(int val, int* avgs, int len);
 float   scale( float origMin, float origMax, float start, float fin, float val, float curve);
 void    visualize();
 //----------------------------------------------------------------------------------------------------------------
-
-CRGB leds[NUM_LEDS];
 
 void setup()
 {
   Serial.begin(9600);
 
   FastLED.addLeds<NEOPIXEL, LED_STRIP_PIN>(leds, NUM_LEDS); // Initialize Fast LED
-  for (int i = 0; i < NUM_LEDS; i++) 
-		leds[i] = CRGB(0, 0, 255);
+  
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    leds[i] = CRGB(0, 255, 0); 
+  }
 	FastLED.show(); 
 	delay(1000); 	
 
 	//bootstrap average with some low values
-	for (int i = 0; i < AVGLEN; i++) {	
-		insert(250, avgs, AVGLEN);
+	for (int i = 0; i < AVERAGE_LENGTH; i++) {	
+		insert(250, avgs, AVERAGE_LENGTH);
 	}
 
 	//Initial values
 	high.times = 0;
-	high.times_start = millis();
- 	Color.r = 0;	
-	Color.g = 0;
-  Color.b = 1;
+	high.timeStart = millis();
+ 	color.r = 0;	
+	color.g = 0;
+  color.b = 1;
 }
 
 void loop()
 {
-  switch(mode) {
-	case 0:
-		visualize_music();
-		break;
-	default:
-		break;
-}
-
-delay(DELAY); // delay in between reads for stability
 }
 
 //----------------------------------------------------------------------------------------------------------------
 // Helper Functions
 // Compute the average of an array
-int avg(int* avgs, int len)
+int computeAvg(int* avgs, int len)
 {
   int sum = 0;
 
-  asm("ldi r16, len \n\t"   // Clear counting register
+  asm("ldi r16, len \n\t"         // Clear counting register
       "loop: \n\t"
-      "inc r16 \n\t"        // Increase counting register
+      "inc r16 \n\t"              // Increase counting register
       // Add each array value to sum
-      "cpi r16, 0 \n\t"          // Compare counting register with 0
-      "brne loop \n\t"           // Repeat the loop if not equal to 0
-      : "=r" (sum)          // Sum in register, write only
+      
+      "cpi r16, 0 \n\t"           // Compare counting register with 0
+      "brne loop \n\t"            // Repeat the loop if not equal to 0
+      : "=r" (sum)                // Sum in register, write only
+      : "r" (avgs)               // Array, read + write
      );
 }
 
@@ -117,7 +111,11 @@ void insert(int val, int* avgs, int len)
 
 // From Arduino.cc, scaling function with curve
 float scale( float origMin, float origMax, float start, float fin, float val, float curve)
-{ 
+{
+  float origRange = 0;
+  float newRange = 0;
+  float zeroRefCurvVal = 0;
+  float normalizedCurvVal = 0;
 }
 
 // Visualize 
@@ -126,10 +124,20 @@ void visualize()
   int avg;
   int longAvg;
   int mapped;
-  int sensorValue;
+  float sensorValue;
 
   // Read actual sensor value
-  sensorValue = analogRead(ANALOG_PIN);
+  sensorValue = (float)analogRead(ANALOG_PIN);
+
+  // Check if sensor value is 0, if it is then discard
+  if (sensorValue == 0)
+  {
+    return;
+  }
+
+  // Smoothing, discard readings that deviate too much from the prev avg
+  mapped = scale(MIC_MIN, MIC_MAX, MIC_MIN, MIC_MAX, sensorValue, 2.0);
+  avg = computeAvg(avgs, AVERAGE_LENGTH);
 }
 
 
