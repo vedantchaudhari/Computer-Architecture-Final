@@ -92,7 +92,34 @@ void checkHigh(int avg)
 {
   if (avg > (songAvg / iter * 1.1))
   {
-    
+    if (high.times != 0)
+    {
+      if (millis() - high.timeStart > 200.0)
+      {
+        high.times = 0;
+        songMode = NORMAL;
+      }
+      else
+      {
+        high.timeStart = millis();
+        high.times++;
+      }
+    }
+    else
+    {
+      high.times++;
+      high.timeStart = millis();
+    }
+  }
+
+  if (high.times > 30.0 && millis() - high.timeStart < 50.0)
+  {
+    songMode = HIGH;
+  }
+  else if (millis() - high.timeStart > 200.0)
+  {
+    high.times = 0;
+    songMode = NORMAL;
   }
 }
 
@@ -257,6 +284,27 @@ void visualize()
 
   longAvg = computeAvg(longAvg, LONG_SECTOR);
 
-  check_high(
+  // Check what the songMode should be
+  checkHigh(longAvg);
+
+  // Set the colors based on the songMode
+  if (songMode == HIGH)
+  {
+    fadeScale = 3.0;
+    
+    color.r = 5;
+    color.g = -1;
+    color.b = 3;
+  }
+  else if (songMode == NORMAL)
+  {
+    fadeScale = 2.0;
+
+    color.r = -1;
+    color.b = 2;
+    color.g = 1;
+  }
+
+  activeLEDS = scale(MIC_MIN, MIC_MAX, 0.0, (float)NUM_LEDS, (float)avg, -1);
 }
 
