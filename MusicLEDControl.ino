@@ -306,5 +306,57 @@ void visualize()
   }
 
   activeLEDS = scale(MIC_MIN, MIC_MAX, 0.0, (float)NUM_LEDS, (float)avg, -1);
+
+  // Set the different LEDS, control for too high and too low
+  for (int iter = 0; iter < NUM_LEDS; iter++)
+  {
+    if (iter < activeLEDS)
+    {
+      if (leds[iter].r + color.r > 255)
+      {
+        leds[iter].r = 255;
+      }
+      else if (leds[iter].r + color.r < 0)
+      {
+        leds[iter].r = 0;
+      }
+      else
+      {
+        leds[iter].r = leds[iter].r + color.r;
+      }
+
+      if (leds[iter].g + color.g > 255)
+      {
+        leds[iter].g = 255;
+      }
+      else if (leds[iter].g + color.g < 0)
+      {
+        leds[iter].g = 0;
+      }
+      else
+      {
+        leds[iter].g = leds[iter].g + color.g;
+      }
+
+      if (leds[iter].b + color.b > 255)
+      {
+        leds[iter].b = 255;
+      }
+      else if (leds[iter].b + color.b < 0)
+      {
+        leds[iter].b = 0;
+      }
+      else
+      {
+        leds[iter].b = leds[iter].b + color.b;
+      }
+    }
+    else
+    {
+      leds[i] = CRGB(leds[iter].r / fadeScale, leds[iter].g / fadeScale, leds[iter].b / fadeScale);
+    }
+  }
+
+  FastLED.show();
 }
 
