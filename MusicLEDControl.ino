@@ -146,7 +146,7 @@ int computeAvg(int* avgs, int len)
       "adc r31, r1 \n\t"          // High Byte
       "ldi r25, %0"               // Load sum into register r25
       "loop: \n\t"                
-      "inc r16 \n\t"              // Increase counting register
+      "dec r16 \n\t"              // Decrease counting register
       // Add each array value to sum
       // Load array base address into register pair r31:r30
       "ld r18, Z \n\t"            // Load value at current index
@@ -156,6 +156,8 @@ int computeAvg(int* avgs, int len)
       "brne loop \n\t"            // Repeat the loop if not equal to 0
       : "+r" (sum)                // Sum in register, write only
      );
+
+     return sum / len;            // We are going to do division in C because no division in AVR assembly oO
 }
 
 // Insert a value into the array, shift it down if the first value of the array is already full
