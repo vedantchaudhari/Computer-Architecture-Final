@@ -48,6 +48,7 @@ struct Time high;                       // Keep track of how long high mode last
 struct Color color;                     // Color
 //----------------------------------------------------------------------------------------------------------------
 // Helper Functions
+void    checkHigh(int avg);
 int     computeAvg(int* avgs, int len);
 void    insert(int val, int* avgs, int len);
 float   scale( float origMin, float origMax, float start, float fin, float val, float curve);
@@ -86,27 +87,60 @@ void loop()
 
 //----------------------------------------------------------------------------------------------------------------
 // Helper Functions
+// Check wether lamp should enter high mode or revert to normal
+void checkHigh(int avg)
+{
+  if (avg > (songAvg / iter * 1.1))
+  {
+    
+  }
+}
+
 // Compute the average of an array
+// Written in assembly because I am a sick man
 int computeAvg(int* avgs, int len)
 {
   int sum = 0;
+  unsigned int iter;
 
   asm("ldi r16, len \n\t"         // Clear counting register
-      "loop: \n\t"
+      "ldi r30, lo8(avgs) \n\t"
+      "ldi r31, hi8(avgs) \n\t"
+      "lds r24, (iter) \n\t"      // 
+      "add r30, r24 \n\t"         // Low Byte
+      "adc r31, r1 \n\t"          // High Byte
+      "ldi r25, %0"               // Load sum into register r25
+      "loop: \n\t"                
       "inc r16 \n\t"              // Increase counting register
       // Add each array value to sum
-      
+      // Load array base address into register pair r31:r30
+      "ld r18, Z \n\t"            // Load value at current index
+      "add r25, r18 \n\t"         // Add r25 = r25 + r18, adding current index to running sum
+      "ld r18, Z+ \n\t"           // Auto increment
       "cpi r16, 0 \n\t"           // Compare counting register with 0
       "brne loop \n\t"            // Repeat the loop if not equal to 0
-      : "=r" (sum)                // Sum in register, write only
-      : "r" (avgs)               // Array, read + write
+      : "+r" (sum)                // Sum in register, write only
      );
 }
 
 // Insert a value into the array, shift it down if the first value of the array is already full
 void insert(int val, int* avgs, int len)
 {
-  
+  for (int iter = 0; iter < len; iter++)
+  {
+    if (avgs[iter] = -1)
+    {
+      avgs[iter] = val;
+      return;
+    }
+  }
+
+  for (int iter = 0; iter < len; iter++)
+  {
+    avgs[iter - 1] = avgs[iter];
+  }
+
+  avgs[len - 1] = val;
 }
 
 // From Arduino.cc, scaling function with curve
@@ -116,9 +150,71 @@ float scale( float origMin, float origMax, float start, float fin, float val, fl
   float newRange = 0;
   float zeroRefCurvVal = 0;
   float normalizedCurvVal = 0;
+  float outVal;
+  boolean flag = false;
+
+  // Limit curve range
+  if (curve > 10)
+  {
+    curve = 10;
+  }
+  if (curve < -10)
+  {
+    curve = -10;
+  }
+
+  // Scale and Invert
+  curve = curve * -0.1;
+  // Convert linear scale to log scale
+  curve = pow(10, curve);
+
+  // Check if val is in range
+  if (val < origMin)
+  {
+    val = origMin;
+  }
+  if (val > origMax)
+  {
+    val = origMax;
+  }
+
+  // Zero referrence the values
+  origRange = origMax - origMin;
+
+  if (start > fin)
+  {
+    newRange = fin - start;
+  }
+  else
+  {
+    newRange = start - fin;
+    flag = true;
+  }
+
+  zeroRefCurvVal = val - origMin;
+  // Normalize to between 0 - 1
+  normalizedCurvVal = zeroRefCurvVal / origRange; 
+
+  // Check if original min is greater than original max
+  if (origMin > origMax)
+  {
+    return 0;
+  }
+
+  if (flag == false)
+  {
+    outVal = (pow(normalizedCurvVal, curve) * newRange) + start;
+  }
+  else
+  {
+    // Invert the ranges
+    outVal = start - (pow(normalizedCurvVal, curve) * newRange);
+  }
+
+  return outVal;
 }
 
-// Visualize 
+// Visualize the music boiiii
 void visualize()
 {
   int avg;
@@ -138,8 +234,29 @@ void visualize()
   // Smoothing, discard readings that deviate too much from the prev avg
   mapped = scale(MIC_MIN, MIC_MAX, MIC_MIN, MIC_MAX, sensorValue, 2.0);
   avg = computeAvg(avgs, AVERAGE_LENGTH);
+
+  // Check if values exceed defined threshold
+  if ((avg - mapped) > (avg * DEV_THRESHOLD))
+  {
+    return;
+  }
+
+  // Insert the new average values
+  insert(mapped, avgs, AVERAGE_LENGTH);
+  insert(avg, longAvg, LONG_SECTOR);
+
+  // Compute the average sensor value for the song
+  songAvg += avg;
+  iter++;
+
+  if (iter > CYCLES)
+  {
+    songAvg = songAvg / iter;
+    iter = 1;
+  }
+
+  longAvg = computeAvg(longAvg, LONG_SECTOR);
+
+  check_high(
 }
-
-
-
 
